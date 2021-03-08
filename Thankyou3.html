@@ -1,0 +1,781 @@
+<%@LANGUAGE="VBSCRIPT" CodePage = 65001 %>
+<%Option Explicit%>
+
+<%
+Session.CodePage = 65001 
+Response.CodePage = 65001
+Response.CharSet = "utf-8" 
+%>
+<!--#include file="connection.inc"-->
+<!--#include file="function.asp"-->
+<!--#include file="xmlDeverus.asp"-->
+<!--#include file="Biz_IntlxmlDeverus.asp"-->
+<!--#include file="Ind_IntlxmlDeverus.asp"-->
+<!--#include file="Deverus_Business_Credit_Report.asp"-->
+<!--#include file="global_xmlDeverus.asp"-->
+<!--#include file="Ind_CrimCivilDeverus.asp"-->
+<!--#include file="Ind_CivilBankDeverus.asp"-->
+<%
+
+On Error Resume Next
+'CODEPAGE="65001"
+If Session("SearchType") = "" Then
+	Response.Redirect("http://www.criminal-records-search.com/")
+End If
+
+
+Dim oConn, sql, RS, OrderID
+Dim myMail, strBody, strSupportEmailAdrs, strJustinEmailAdrs, strresearchEmailAdrs, sDeveloperEmail
+Dim strSysMsg
+dim flg
+Dim UserID, Password, sDB
+
+flg=true
+strSysMsg = ""
+'sDB = "infoORDER_test"
+sDB = "infoORDER"
+
+''Mail Address---------------------------------
+strSupportEmailAdrs  = "support@criminal-records-search.com "
+'strSupportEmailAdrs  = "yosshiyegg@hotmail.com"
+strJustinEmailAdrs = "justin@criminal-records-search.com"
+'strJustinEmailAdrs = "yoshie@infocubic.com"
+strresearchEmailAdrs = "support@criminal-records-search.com "
+sDeveloperEmail = "yoshie@infocubic.com"
+
+''--TEST ADDRESS--
+'strSupportEmailAdrs  = "info@misokinawa.com"
+'strJustinEmailAdrs = "criminal-records-search.com"
+'strresearchEmailAdrs = "info@misokinawa.com"
+''-------------------------------------------------
+
+Session("SearchType") = StrQuoteReplace(Session("SearchType"))
+Session("FName") = StrQuoteReplace(Session("FName")) ' first name of subject person
+Session("LName") = StrQuoteReplace(Session("LName")) ' last name of subject person
+Session("MName") = StrQuoteReplace(Session("MName"))
+Session("DOB") = StrQuoteReplace(Session("DOB"))
+Session("SSN") = StrQuoteReplace(Session("SSN"))
+Session("Juris") = StrQuoteReplace(Session("Juris"))
+Session("CountyName") = StrQuoteReplace(Session("CountyName"))
+Session("Juris2") = StrQuoteReplace(Session("Juris2"))
+Session("CountyName2") = StrQuoteReplace(Session("CountyName2"))
+Session("Juris3") = StrQuoteReplace(Session("Juris3"))
+Session("CountyName3") = StrQuoteReplace(Session("CountyName3"))
+
+Session("CFirstName") = StrQuoteReplace(Session("CFirstName"))
+Session("CLastName") = StrQuoteReplace(Session("CLastName"))
+Session("CompanyName") = StrQuoteReplace(Session("CompanyName"))
+Session("CardBrand") = StrQuoteReplace(Session("CardBrand"))
+Session("CardName") = StrQuoteReplace(Session("CardName"))
+Session("Card_Number") = StrQuoteReplace(Session("Card_Number"))
+Session("ExpDate") = StrQuoteReplace(Session("ExpDate"))
+Session("CVV") = StrQuoteReplace(Session("CVV"))
+Session("Street_Address") = StrQuoteReplace(Session("Street_Address"))
+Session("City") = StrQuoteReplace(Session("City"))
+Session("State") = StrQuoteReplace(Session("State"))
+Session("ZipCode") = StrQuoteReplace(Session("ZipCode"))
+Session("Email_Address") = StrQuoteReplace(Session("Email_Address"))
+Session("Phone_Number") = StrQuoteReplace(Session("Phone_Number"))
+
+Session("SZip") = StrQuoteReplace(Session("SZip"))
+Session("SState") = StrQuoteReplace(Session("SState"))
+Session("SCity") = StrQuoteReplace(Session("SCity"))
+Session("SStAddress") = StrQuoteReplace(Session("SStAddress"))
+Session("Comment") = StrQuoteReplace(Session("Comment"))
+
+
+'insert data into database
+sql = "INSERT INTO " & sDB & "(CLName, CFName, CompanyName, PhoneNumber, CEmail, CardType, CardHolder, CardNumber, ExpDate, CVV, CardStAddress, " &_
+		"CardCity, CardState, cardCountry , CardZip, Product, SearchCost, ChargeFlag, OrderDate, SFName, SMName, SLName, DOB, SSN, SStAddress, " &_
+		"SCity, SState, SZip, UserIP, CrimState1, CrimCounty1, CrimState2, CrimCounty2, CrimState3, CrimCounty3, Status, Comment, Brand) " &_
+		"VALUES " &_
+		"('"& Session("CLastName") &"','"& Session("CFirstName") &"','" & Session("CompanyName") & "','"& Session("Phone_Number") &"','"& Session("Email_Address") &"','"& Session("CardBrand") &"'," &_
+		"'"& Session("CardName") &"','"& Session("Card_Number") &"','"& Session("ExpDate") &"','"& Session("CVV") &"'," &_
+		"'"& Session("Street_Address") &"','"& Session("City") &"','"& Session("State") &"', '" & Session("cCountry") & "', '"& Session("ZipCode") &"', " &_
+		"'"& Session("SearchType") &"','"& Session("SearchCost") &"', '$','"& Now() &"', N'"& Session("FName") &"'," &_
+		"N'"& Session("MName") &"', N'"& Session("LName") &"','"& Session("DOB") &"','"& Session("SSN") &"'," &_
+		"N'"& Session("SStAddress") &"', N'"& Session("SCity") &"', N'"& Session("SState") &"','"& Session("SZip") &"'," &_
+		"'"& Session("IPAddress") &"','"& Session("Juris") &"','"& Session("CountyName") &"','"& Session("Juris2") & "','" & Session("CountyName2") &"'," &_
+		"'"& Session("Juris3") & "','" & Session("CountyName3") & "', 'C', "
+
+
+''<!--Dynamicfield-->
+If Session("SearchType") = "International Criminal Records" OR Session("SearchType") = "International Civil Records" OR Session("SearchType") = "International Bankruptcy Records" OR Session("SearchType") = "International Criminal and Civil Records" Then
+    If Session("CountryID") = "china" Then 
+        Session("SDynamicfieldName") = StrQuoteReplace(Session("SDynamicfieldName"))
+        Session("SDynamicfield") = StrQuoteReplace(Session("SDynamicfield"))    
+        sql=sql & "N'" & Session("Comment") & "-----" & Session("SDynamicfieldName") & ":" & Session("SDynamicfield") & "', 'N')"
+    ElseIf Session("CountryID") = "india" OR Session("CountryID") = "bangladesh" OR Session("CountryID") = "srilanka" OR Session("CountryID") = "antigua" OR Session("CountryID") = "costarica" OR Session("CountryID") = "aruba" OR Session("CountryID") = "israel" OR Session("CountryID") = "colombia" OR Session("CountryID") = "panama" OR Session("CountryID") = "nepal" OR Session("CountryID") = "bahamas" OR Session("CountryID") = "barbados" OR Session("CountryID") = "jamaica" OR Session("CountryID") = "guam" OR Session("CountryID") = "virginislandsus" OR Session("CountryID") = "americansamoa" OR Session("CountryID") = "malaysia" OR Session("CoutryID") = "korea" OR Session("CountryID") ="italy" OR Session("CountryID") ="hongkong" OR Session("CountryID") ="sweden" OR Session("CountryID") ="thailand" Then 
+        Session("SDynamicfieldName") = StrQuoteReplace(Session("SDynamicfieldName"))
+        Session("SDynamicfield") = StrQuoteReplace(Session("SDynamicfield"))
+        sql=sql & "N'" & Session("Comment") & "-----" & Session("SDynamicfieldName") & ":" & Session("SDynamicfield") & "', 'N')"
+    ElseIf Session("CountryID") = "mexico" OR Session("CountryID") ="australia"  OR Session("CountryID") ="guatemala" OR Session("CountryID") = "spain" OR Session("CountryID") = "chile" Then 
+        Session("SDynamicfieldName") = StrQuoteReplace(Session("SDynamicfieldName"))
+        Session("SDynamicfield") = StrQuoteReplace(Session("SDynamicfield"))
+        sql=sql & "N'" & Session("Comment") & "-----" & Session("SDynamicfieldName") & ":" & Session("SDynamicfield") & "', 'N')"
+    ElseIf Session("CountryID") = "southafrica" Then
+        Session("SDynamicfieldName") = StrQuoteReplace(Session("SDynamicfieldName"))
+        Session("SDynamicfield") = StrQuoteReplace(Session("SDynamicfield"))
+        sql=sql & "N'" & Session("Comment") & "-----" & Session("SDynamicfieldName") & ":" & Session("SDynamicfield") & "', 'N')"
+    ElseIf Session("CountryID") = "brazil" Then
+        Session("SDynamicfieldName") = StrQuoteReplace(Session("SDynamicfieldName"))
+        Session("SDynamicfield") = StrQuoteReplace(Session("SDynamicfield"))
+        sql=sql & "N'" & Session("Comment") & "-----" & Session("SDynamicfieldName") & ":" & Session("SDynamicfield") & "', 'N')"
+	ElseIf Session("CountryID") = "puertorico" Then
+        Session("SDynamicfieldName") = StrQuoteReplace(Session("SDynamicfieldName"))
+        Session("SDynamicfield") = StrQuoteReplace(Session("SDynamicfield"))
+        Session("SDynamicfieldName2") = StrQuoteReplace(Session("SDynamicfieldName2"))
+        Session("SDynamicfield2") = StrQuoteReplace(Session("SDynamicfield2"))
+        sql=sql & "N'" & Session("Comment") & "-----" & Session("SDynamicfieldName") & ":" & Session("SDynamicfield") & "-----" & Session("SDynamicfieldName2") & ":" & Session("SDynamicfield2") & "', 'N')"
+    Else
+        sql=sql & "N'" & Session("Comment") & "', 'N')"
+    End If
+ElseIF Session("SearchType") = "International MVR Records" Then
+	    Session("SDynamicfieldName") = StrQuoteReplace(Session("SDynamicfieldName"))
+        Session("SDynamicfield") = StrQuoteReplace(Session("SDynamicfield"))
+        sql=sql & "N'" & Session("Comment") & "-----" & Session("SDynamicfieldName") & ":" & Session("SDynamicfield") & ", " & Session("SDynamicfield2") & "', 'N')"
+Else
+    sql=sql & "N'" & Session("Comment") & "', 'N')"
+End If
+'response.Write(sql)
+'response.End
+
+'check(sql)
+
+Set oConn=Server.CreateObject("ADODB.Connection")
+'oConn.open strCon
+oConn.open conStr
+
+''SQL Execute-------
+oConn.Execute(sql)
+''-----------------------
+
+
+
+
+'get order ID from database
+sql = "select MAX(OrderID) from " & sDB & " where CEmail = '"& Session("Email_Address") &"'"
+Set RS = oConn.Execute(sql)
+OrderID = RS(0)
+
+
+If Err.Number <> 0 Then
+	strSysMsg = "Error occured during the order process."
+	strSysMsg = strSysMsg & "<br />" & Err.Description
+	ErrorMail(Err.Description)
+	flg=false
+End If
+
+
+
+RS.Close
+Set RS = Nothing
+oConn.Close
+Set oConn = nothing
+
+''Send Mail-------
+'EmailSender (comment this line out due to too many emails 06/04/2019 by Justin) 
+'If flg Then
+EmailReceipt
+EmailReceiptToUs
+mailStraightline
+
+''-------------------------
+'' Create HR-XML
+''-------------------------
+Dim sResult
+
+if len(Session("Comment")) > 140 then
+    Session("Comment") = left(Session("Comment"), 130) & " ..."
+end if
+
+
+if Session("SearchType") = "International Criminal Records" OR Session("SearchType") = "International Nationwide Criminal Records" OR Session("SearchType") = "International Police Certificate" Then
+    sResult = getHRXML(OrderID)
+	
+'ElseIF Session("SearchType") = "International Civil and Bankruptcy Records" Then
+    'sResult = getHRXML_Intlcivilbank & getHRXML_IND
+
+ElseIF Session("SearchType") = "International Civil Records" OR Session("SearchType") = "International Bankruptcy Records" OR Session("SearchType") = "International MVR Records" OR Session("SearchType") = "International ID Checks" OR Session("SearchType") = "International Credit Report" OR Session("SearchType") = "International ID Verification" OR Session("SearchType") = "International Directorship Check" OR Session("SearchType") = "International Passport Validation" Then
+	sResult = getHRXML_IND(OrderID)
+		
+ElseIf Session("SearchType") = "Business Credit Report" OR Session("SearchType") = "Business Express Credit Report" Then
+    sResult = getHRXML_BCR(OrderID)
+       
+	
+ElseIf Session("SearchType") = "International Business Bankruptcy Records" OR Session("SearchType") = "International Business Civil Records" Then
+    sResult = getHRXML_BIZ(OrderID)
+
+ElseIf Session("SearchType") = "Global Search" Then
+    sResult = getHRXML_GLOBE(OrderID)	
+	
+ElseIf Session("SearchType") = "International Criminal and Civil Records" Then
+    sResult = getHRXML_Intlcrimcivil(OrderID)	       
+	
+End If
+
+    If InStr(sResult,"ERROR") > 0 Then
+        sResult = mid(sResult, InStr(sResult,"ERROR"))
+        sendErrorHRXML sResult, OrderID 
+		'response.Write(OrderID & "<br />" & sResult)             
+    End If
+
+Session.Abandon() 
+
+
+'*******************************************************
+'remove single quotation
+Function StrQuoteReplace(val)
+	StrQuoteReplace = Replace(val, "'", "''")
+End Function
+'*******************************************************
+
+'*******************************************************
+'Send ErrorMail
+Sub ErrorMail(msg)
+	Dim objCDOConfig, objFields
+	Set myMail = CreateObject("CDO.Message")
+	
+	''========= for test mail server ==============
+	'Set objCDOConfig = Server.CreateObject("CDO.Configuration")
+	'Set objFields = objCDOConfig.Fields	
+	'With objFields
+	'	.Item("http://schemas.microsoft.com/cdo/configuration/smtpserver") = "chokyo"
+	'	.Item("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = 25
+	'	.Item("http://schemas.microsoft.com/cdo/configuration/SendUsing") = 2
+	'	.Update
+	'End With	
+	'objCDOMail.Configuration = objCDOConfig
+	''========= for test mail server -end- ==============
+		
+	myMail.From = strSupportEmailAdrs
+	myMail.To = strJustinEmailAdrs
+	myMail.Subject = "Order Error"
+	myMail.TextBody = msg
+	
+	strBody = "======== Error Description ==========" & vbCrLf
+	strBody = strBody & msg  & vbCrLf  & vbCrLf
+	
+	strBody = strBody & "======== Your search detail=========="  & vbCrLf
+	
+			If Session("SearchType") = "International Criminal Records" OR Session("SearchType") = "International Police Certificate" or Session("SearchType") = "International Civil Records"	or Session("SearchType") = "International Bankruptcy Records"	or	Session("SearchType") = "International Nationwide Criminal Records" OR Session("SearchType") = "International MVR Records" OR Session("SearchType") = "International ID Checks" OR Session("SearchType") = "International Credit Report" OR Session("SearchType") = "International ID Verification" OR Session("SearchType") = "International Directorship Check" OR Session("SearchType") = "International Passport Validation" Then
+		strBody = "Thank you for using International records search at CRS Checks." & vbCrLf & vbCrLf & strBody
+		strBody = strBody & "Search service fee $" & Session("SearchCost") & vbCrLf
+		strBody = strBody & "Search Type= " & Session("SearchType") & vbCrLf & vbCrLf
+		strBody = strBody & "First Name= " & Session("FName") & vbCrLf
+		strBody = strBody & "Last Name= " & Session("LName") & vbCrLf
+		strBody = strBody & "Middle Name= " & Session("MName") & vbCrLf
+		strBody = strBody & "SSN= " & Session("SSN") & vbCrLf
+		strBody = strBody & "DOB= " & Session("DOB") & vbCrLf
+		
+		If Session("CountryID") = "china" Then 
+		    strBody = strBody & Session("SDynamicfieldName") & "= " & Session("SDynamicfield") & vbCrLf
+        ElseIf Session("CountryID") = "india" OR Session("CountryID") = "bangladesh" OR Session("CountryID") = "srilanka" OR Session("CountryID") = "antigua" OR Session("CountryID") = "costarica" OR Session("CountryID") = "aruba" OR Session("CountryID") = "israel" OR Session("CountryID") = "colombia" OR Session("CountryID") = "panama" OR Session("CountryID") = "nepal" OR Session("CountryID") = "bahamas" OR Session("CountryID") = "barbados" OR Session("CountryID") = "jamaica" OR Session("CountryID") = "guam" OR Session("CountryID") = "virginislandsus" OR Session("CountryID") = "americansamoa" OR Session("CountryID") = "malaysia" OR Session("CoutryID") = "korea" OR Session("CountryID") ="italy" OR Session("CountryID") ="hongkong" OR Session("CountryID") ="sweden" OR Session("CountryID") ="thailand" Then 
+            strBody = strBody & Session("SDynamicfieldName") & "= " & Session("SDynamicfield") & vbCrLf
+        ElseIf Session("CountryID") = "mexico" OR Session("CountryID") = "spain" OR Session("CountryID") = "chile" OR Session("CountryID") ="australia"  OR Session("CountryID") ="guatemala" Then 
+            strBody = strBody & Session("SDynamicfieldName") & "= " & Session("SDynamicfield") & vbCrLf
+        ElseIf Session("CountryID") = "southafrica" Then
+            strBody = strBody & Session("SDynamicfieldName") & "= " & Session("SDynamicfield") & vbCrLf
+        ElseIf Session("CountryID") = "brazil" Then
+            strBody = strBody & Session("SDynamicfieldName") & "= " & Session("SDynamicfield") & vbCrLf
+		ElseIf Session("CountryID") = "puertorico" Then
+            strBody = strBody & Session("SDynamicfieldName") & "= " & Session("SDynamicfield") & vbCrLf
+            strBody = strBody & Session("SDynamicfieldName2") & "= " & Session("SDynamicfield2") & vbCrLf
+        End If 
+        
+		strBody = strBody & "State1= " & Session("Juris") & vbCrLf
+		strBody = strBody & "County1= " & Session("CountyName") & vbCrLf
+		strBody = strBody & "State2= " & Session("Juris2") & vbCrLf
+		strBody = strBody & "County2= " & Session("CountyName2") & vbCrLf
+		strBody = strBody & "State3= " & Session("Juris3") & vbCrLf
+		strBody = strBody & "County3= " & Session("CountyName3") & vbCrLf
+		strBody = strBody & "Address in " & Session("Juris") & "= " & Session("SStAddress") & vbCrLf
+		strBody = strBody & "City in " & Session("CountryName") & "= " & Session("SCity") & vbCrLf
+		strBody = strBody & "State/Provience= " & Session("SState") & vbCrLf
+		strBody = strBody & "Zip= " & Session("SZip") & vbCrLf 
+	ElseIf Session("SearchType") = "International Education Verification" Then
+		strBody = "Thank you very much for using CRS chekcs - International verification system"  & vbCrLf & vbCrLf & strBody
+		strBody = strBody & "Search service fee= $" & Session("SearchCost") & vbCrLf
+		strBody = strBody & "Search Type= " & Session("SearchType") & vbCrLf & vbCrLf
+		strBody = strBody & "First Name= " & Session("FName") & vbCrLf
+		strBody = strBody & "Last Name= " & Session("LName") & vbCrLf
+		strBody = strBody & "Middle Name= " & Session("MName") & vbCrLf
+		strBody = strBody & "DOB= " & Session("DOB") & vbCrLf
+		strBody = strBody & "School name= " & Session("CountyName") & vbCrLf 
+		strBody = strBody & "degree= " & Session("CountyName2") & vbCrLf 
+		strBody = strBody & "Major= " & Session("CountyName3") & vbCrLf 
+		strBody = strBody & "School Attended From= " & Session("schoolfrom") & vbCrLf 
+		strBody = strBody & "School Attended To= " & Session("schoolto") & vbCrLf 
+		strBody = strBody & "School Phone= " & Session("Juris2") & vbCrLf 
+		strBody = strBody & "School Fax= " & Session("Juris3") & vbCrLf 	
+		strBody = strBody & "Contry= " & Session("Juris") & vbCrLf 	
+		strBody = strBody & "School Address= " & Session("SStAddress") & vbCrLf 
+	
+	ElseIf Session("SearchType") = "International Employment Verification" Then
+		strBody = "Thank you very much for using CRS chekcs - International verification system"  & vbCrLf & vbCrLf & strBody
+		strBody = strBody & "Search service fee= $" & Session("SearchCost") & vbCrLf
+		strBody = strBody & "Search Type= " & Session("SearchType") & vbCrLf & vbCrLf
+		strBody = strBody & "First Name= " & Session("FName") & vbCrLf
+		strBody = strBody & "Last Name= " & Session("LName") & vbCrLf
+		strBody = strBody & "Middle Name= " & Session("MName") & vbCrLf
+		strBody = strBody & "DOB= " & Session("DOB") & vbCrLf
+		strBody = strBody & "Company name= " & Session("CountyName") & vbCrLf 
+		strBody = strBody & "Contact Person name= " & Session("CountyName2") & vbCrLf 
+		strBody = strBody & "Job position= " & Session("CountyName3") & vbCrLf 
+		strBody = strBody & "Start Date= " & Session("schoolfrom") & vbCrLf 
+		strBody = strBody & "End Date= " & Session("schoolto") & vbCrLf 
+		strBody = strBody & "Contact Phone= " & Session("Juris2") & vbCrLf 
+		strBody = strBody & "Fax= " & Session("Juris3") & vbCrLf 	
+		strBody = strBody & "Contry= " & Session("Juris") & vbCrLf 	
+		strBody = strBody & "Company address= " & Session("SStAddress") & vbCrLf 
+
+	ElseIf Session("SearchType") = "Business Credit Report" OR Session("SearchType") = "International Business Civil Records" or Session("SearchType") = "Business Express Credit Report" Then
+		strBody = "Thank you very much for using CRS chekcs - International Business Search"  & vbCrLf & vbCrLf & strBody
+		strBody = strBody & "Search service fee= $" & Session("SearchCost") & vbCrLf
+		strBody = strBody & "Search Type= " & Session("SearchType") & vbCrLf & vbCrLf
+		strBody = strBody & "Business Name= " & Session("LName") & vbCrLf
+
+		strBody = strBody & "Company address= " & Session("SStAddress") & vbCrLf	
+		strBody = strBody & "City in " & Session("CountryName") & "= " & Session("SCity") & vbCrLf
+		strBody = strBody & "State/Provience= " & Session("SState") & vbCrLf
+		strBody = strBody & "Zip= " & Session("SZip") & vbCrLf 
+		strBody = strBody & "Contry= " & Session("Juris") & vbCrLf
+	End If
+	
+	strBody = strBody & "Comment= " & Session("Comment") & vbCrLf & vbCrLf
+
+	strBody = strBody & "Your information:" & vbCrLf 
+	strBody = strBody & "Your Name= " & Session("CFirstName") & " " & Session("CLastName") & vbCrLf
+	strBody = strBody & "Company Name= " & Session("CompanyName") & vbCrLf
+	strBody = strBody & "Email Address= " & Session("Email_Address") & vbCrLf
+	strBody = strBody & "Confirmed Email Address= " & Session("Email_Address2") & vbCrLf
+	strBody = strBody & "Card Holder= " & Session("CardName") & vbCrLf 
+	strBody = strBody & "Card Type= " & Session("CardBrand") & vbCrLf 
+	strBody = strBody & "Street Address= " & Session("Street_Address") & vbCrLf
+	strBody = strBody & "City= " & Session("City") & vbCrLf 
+	strBody = strBody & "State= " & Session("State") & vbCrLf 
+	strBody = strBody & "Zip= " & Session("ZipCode") & vbCrLf
+	strBody = strBody & "Country= " & Session("cCountry") & vbCrLf 
+	strBody = strBody & "IP Address= " & Session("IPAddress") & vbCrLf 
+	strBody = strBody & "Phone= " & Session("Phone_Number") & vbCrLf & vbCrLf
+	
+	myMail.TextBody = strBody
+	
+		myMail.Configuration.Fields.Item _
+		("http://schemas.microsoft.com/cdo/configuration/sendusing") = 2
+		'Name or IP of remote SMTP server
+		myMail.Configuration.Fields.Item _
+		("http://schemas.microsoft.com/cdo/configuration/smtpserver") = "mail.criminal-records-search.com"
+		'Server port
+		myMail.Configuration.Fields.Item _
+		("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = 25 
+
+		myMail.Configuration.Fields.Item ("http://schemas.microsoft.com/cdo/configuration/smtpauthenticate") = 1 'basic (clear-text) authentication 
+		myMail.Configuration.Fields.Item ("http://schemas.microsoft.com/cdo/configuration/sendusername") ="kaeli@criminal-records-search.com" 
+		myMail.Configuration.Fields.Item ("http://schemas.microsoft.com/cdo/configuration/sendpassword") ="Cubic2011!"
+	myMail.Configuration.Fields.Update
+	myMail.Send	
+
+
+	Set myMail = Nothing
+End Sub
+'*******************************************************
+
+'*******************************************************
+'Send Transaction Code
+Sub EmailSender
+	Dim objCDOConfig, objFields
+	Set myMail = CreateObject("CDO.Message")
+	
+	''========= for test mail server ==============
+	'Set objCDOConfig = Server.CreateObject("CDO.Configuration")
+	'Set objFields = objCDOConfig.Fields	
+	'With objFields
+	'	.Item("http://schemas.microsoft.com/cdo/configuration/smtpserver") = "chokyo"
+	'	.Item("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = 25
+	'	.Item("http://schemas.microsoft.com/cdo/configuration/SendUsing") = 2
+	'	.Update
+	'End With	
+	'objCDOMail.Configuration = objCDOConfig
+	''========= for test mail server -end- ==============
+		
+	myMail.From = strSupportEmailAdrs
+	myMail.To = strJustinEmailAdrs
+	myMail.Subject = "Transaction Code"
+	myMail.TextBody = Session("TransCode")
+	
+		myMail.Configuration.Fields.Item _
+		("http://schemas.microsoft.com/cdo/configuration/sendusing") = 2
+		'Name or IP of remote SMTP server
+		myMail.Configuration.Fields.Item _
+		("http://schemas.microsoft.com/cdo/configuration/smtpserver") = "mail.criminal-records-search.com"
+		'Server port
+		myMail.Configuration.Fields.Item _
+		("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = 25 
+
+		myMail.Configuration.Fields.Item ("http://schemas.microsoft.com/cdo/configuration/smtpauthenticate") = 1 'basic (clear-text) authentication 
+		myMail.Configuration.Fields.Item ("http://schemas.microsoft.com/cdo/configuration/sendusername") ="kaeli@criminal-records-search.com" 
+		myMail.Configuration.Fields.Item ("http://schemas.microsoft.com/cdo/configuration/sendpassword") ="Cubic2011!"
+	
+	myMail.Send
+	Set myMail = Nothing
+End Sub
+'*******************************************************
+
+'*******************************************************
+' Send transaction receipt
+Sub EmailReceipt
+	Dim objCDOConfig, objFields
+	Set myMail = CreateObject("CDO.Message")
+	
+	''========= for test mail server ==============
+	'Set objCDOConfig = Server.CreateObject("CDO.Configuration")
+	'Set objFields = objCDOConfig.Fields	
+	'With objFields
+	'	.Item("http://schemas.microsoft.com/cdo/configuration/smtpserver") = "chokyo"
+   ' 	.Item("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = 25
+	'	.Item("http://schemas.microsoft.com/cdo/configuration/SendUsing") = 2
+	'	.Update
+	'End With	
+	'objCDOMail.Configuration = objCDOConfig
+	''========= for test mail server -end- ==============	
+	
+	'strBody = strBody & "Thank you for using criminal-records-search.com."  & vbCrLf & vbCrLf
+	strBody = ""
+	strBody = strBody & "This is a transaction receipt of your search."  & vbCrLf 
+	strBody = strBody & "You will receive search results via email."  & vbCrLf 
+	
+	strBody = strBody & ""& vbCrLf & vbCrLf	
+	strBody = strBody & "IMPORTANT: CRS Checks will appear on your credit card statement." & vbCrLf & vbCrLf
+
+	strBody = strBody & "======== Your search detail=========="  & vbCrLf
+	
+	If Session("SearchType") = "International Criminal Records" OR Session("SearchType") = "International Police Certificate" or Session("SearchType") = "International Civil Records"	or Session("SearchType") = "International Bankruptcy Records"	or	Session("SearchType") = "International Nationwide Criminal Records" OR Session("SearchType") = "International MVR Records" OR Session("SearchType") = "International ID Checks" OR Session("SearchType") = "International Credit Report" OR Session("SearchType") = "International ID Verification" OR Session("SearchType") = "International Directorship Check" OR Session("SearchType") = "International Passport Validation" Then
+		strBody = "Thank you for using International records search at CRS Checks." & vbCrLf & vbCrLf & strBody
+		strBody = strBody & "Search service fee $" & Session("SearchCost") & vbCrLf
+		strBody = strBody & "Search Type= " & Session("SearchType") & vbCrLf & vbCrLf
+		strBody = strBody & "First Name= " & Session("FName") & vbCrLf
+		strBody = strBody & "Last Name= " & Session("LName") & vbCrLf
+		strBody = strBody & "Middle Name= " & Session("MName") & vbCrLf
+		strBody = strBody & "SSN= " & Session("SSN") & vbCrLf
+		strBody = strBody & "DOB= " & Session("DOB") & vbCrLf
+		
+		If Session("CountryID") = "china" Then 
+		    strBody = strBody & Session("SDynamicfieldName") & "= " & Session("SDynamicfield") & vbCrLf
+        ElseIf Session("CountryID") = "india" OR Session("CountryID") = "bangladesh" OR Session("CountryID") = "srilanka" OR Session("CountryID") = "antigua" OR Session("CountryID") = "costarica" OR Session("CountryID") = "aruba" OR Session("CountryID") = "israel" OR Session("CountryID") = "colombia" OR Session("CountryID") = "panama" OR Session("CountryID") = "nepal" OR Session("CountryID") = "bahamas" OR Session("CountryID") = "barbados" OR Session("CountryID") = "jamaica" OR Session("CountryID") = "guam" OR Session("CountryID") = "virginislandsus" OR Session("CountryID") = "americansamoa" OR Session("CountryID") = "malaysia" OR Session("CoutryID") = "korea" OR Session("CountryID") ="italy" OR Session("CountryID") ="hongkong" OR Session("CountryID") ="sweden" OR Session("CountryID") ="thailand" Then 
+            strBody = strBody & Session("SDynamicfieldName") & "= " & Session("SDynamicfield") & vbCrLf
+        ElseIf Session("CountryID") = "mexico" OR Session("CountryID") = "spain" OR Session("CountryID") = "chile" OR Session("CountryID") ="australia"  OR Session("CountryID") ="guatemala" Then 
+            strBody = strBody & Session("SDynamicfieldName") & "= " & Session("SDynamicfield") & vbCrLf
+        ElseIf Session("CountryID") = "southafrica" Then
+            strBody = strBody & Session("SDynamicfieldName") & "= " & Session("SDynamicfield") & vbCrLf
+        ElseIf Session("CountryID") = "brazil" Then
+            strBody = strBody & Session("SDynamicfieldName") & "= " & Session("SDynamicfield") & vbCrLf
+		ElseIf Session("CountryID") = "puertorico" Then
+            strBody = strBody & Session("SDynamicfieldName") & "= " & Session("SDynamicfield") & Session("SDynamicfieldName2") & "= " & Session("SDynamicfield2") & vbCrLf
+        End If 
+        
+		strBody = strBody & "State1= " & Session("Juris") & vbCrLf
+		strBody = strBody & "County1= " & Session("CountyName") & vbCrLf
+		strBody = strBody & "State2= " & Session("Juris2") & vbCrLf
+		strBody = strBody & "County2= " & Session("CountyName2") & vbCrLf
+		strBody = strBody & "State3= " & Session("Juris3") & vbCrLf
+		strBody = strBody & "County3= " & Session("CountyName3") & vbCrLf
+		strBody = strBody & "Address in " & Session("Juris") & "= " & Session("SStAddress") & vbCrLf
+		strBody = strBody & "City in " & Session("CountryName") & "= " & Session("SCity") & vbCrLf
+		strBody = strBody & "State/Provience= " & Session("SState") & vbCrLf
+		strBody = strBody & "Zip= " & Session("SZip") & vbCrLf 
+	ElseIf Session("SearchType") = "International Education Verification" Then
+		strBody = "Thank you very much for using CRS chekcs - International verification system"  & vbCrLf & vbCrLf & strBody
+		strBody = strBody & "Search service fee= $" & Session("SearchCost") & vbCrLf
+		strBody = strBody & "Search Type= " & Session("SearchType") & vbCrLf & vbCrLf
+		strBody = strBody & "First Name= " & Session("FName") & vbCrLf
+		strBody = strBody & "Last Name= " & Session("LName") & vbCrLf
+		strBody = strBody & "Middle Name= " & Session("MName") & vbCrLf
+		strBody = strBody & "DOB= " & Session("DOB") & vbCrLf
+		strBody = strBody & "School name= " & Session("CountyName") & vbCrLf 
+		strBody = strBody & "degree= " & Session("CountyName2") & vbCrLf 
+		strBody = strBody & "Major= " & Session("CountyName3") & vbCrLf 
+		strBody = strBody & "School Attended From= " & Session("schoolfrom") & vbCrLf 
+		strBody = strBody & "School Attended To= " & Session("schoolto") & vbCrLf 
+		strBody = strBody & "School Phone= " & Session("Juris2") & vbCrLf 
+		strBody = strBody & "School Fax= " & Session("Juris3") & vbCrLf 	
+		strBody = strBody & "Contry= " & Session("Juris") & vbCrLf 	
+		strBody = strBody & "School Address= " & Session("SStAddress") & vbCrLf 
+	
+	ElseIf Session("SearchType") = "International Employment Verification" Then
+		strBody = "Thank you very much for using CRS chekcs - International verification system"  & vbCrLf & vbCrLf & strBody
+		strBody = strBody & "Search service fee= $" & Session("SearchCost") & vbCrLf
+		strBody = strBody & "Search Type= " & Session("SearchType") & vbCrLf & vbCrLf
+		strBody = strBody & "First Name= " & Session("FName") & vbCrLf
+		strBody = strBody & "Last Name= " & Session("LName") & vbCrLf
+		strBody = strBody & "Middle Name= " & Session("MName") & vbCrLf
+		strBody = strBody & "DOB= " & Session("DOB") & vbCrLf
+		strBody = strBody & "Company name= " & Session("CountyName") & vbCrLf 
+		strBody = strBody & "Contact Person name= " & Session("CountyName2") & vbCrLf 
+		strBody = strBody & "Job position= " & Session("CountyName3") & vbCrLf 
+		strBody = strBody & "Start Date= " & Session("schoolfrom") & vbCrLf 
+		strBody = strBody & "End Date= " & Session("schoolto") & vbCrLf 
+		strBody = strBody & "Contact Phone= " & Session("Juris2") & vbCrLf 
+		strBody = strBody & "Fax= " & Session("Juris3") & vbCrLf 	
+		strBody = strBody & "Contry= " & Session("Juris") & vbCrLf 	
+		strBody = strBody & "Company address= " & Session("SStAddress") & vbCrLf 
+
+	ElseIf Session("SearchType") = "Business Credit Report" OR Session("SearchType") = "International Business Civil Records" or Session("SearchType") = "Business Express Credit Report" Then
+		strBody = "Thank you very much for using CRS chekcs - International Business Search"  & vbCrLf & vbCrLf & strBody
+		strBody = strBody & "Search service fee= $" & Session("SearchCost") & vbCrLf
+		strBody = strBody & "Search Type= " & Session("SearchType") & vbCrLf & vbCrLf
+		strBody = strBody & "Business Name= " & Session("LName") & vbCrLf
+
+		strBody = strBody & "Company address= " & Session("SStAddress") & vbCrLf	
+		strBody = strBody & "City in " & Session("CountryName") & "= " & Session("SCity") & vbCrLf
+		strBody = strBody & "State/Provience= " & Session("SState") & vbCrLf
+		strBody = strBody & "Zip= " & Session("SZip") & vbCrLf 
+		strBody = strBody & "Contry= " & Session("Juris") & vbCrLf
+	End If
+	
+	strBody = strBody & "Comment= " & Session("Comment") & vbCrLf & vbCrLf
+
+	strBody = strBody & "Your information:" & vbCrLf 
+	strBody = strBody & "Your Name= " & Session("CFirstName") & " " & Session("CLastName") & vbCrLf
+	strBody = strBody & "Company Name= " & Session("CompanyName") & vbCrLf
+	strBody = strBody & "Email Address= " & Session("Email_Address") & vbCrLf
+	strBody = strBody & "Confirmed Email Address= " & Session("Email_Address2") & vbCrLf
+	strBody = strBody & "Card Holder= " & Session("CardName") & vbCrLf 
+	strBody = strBody & "Card Type= " & Session("CardBrand") & vbCrLf 
+	strBody = strBody & "Street Address= " & Session("Street_Address") & vbCrLf
+	strBody = strBody & "City= " & Session("City") & vbCrLf 
+	strBody = strBody & "State= " & Session("State") & vbCrLf 
+	strBody = strBody & "Zip= " & Session("ZipCode") & vbCrLf
+	strBody = strBody & "Country= " & Session("cCountry") & vbCrLf 
+	strBody = strBody & "IP Address= " & Session("IPAddress") & vbCrLf 
+	strBody = strBody & "Phone= " & Session("Phone_Number") & vbCrLf & vbCrLf
+
+	strBody = strBody & "IMPORTANT: CRS Checks will appear on your credit card statement." & vbCrLf & vbCrLf
+
+	strBody = strBody & "======== FAQ =========="  & vbCrLf
+	strBody = strBody & "Q: How can I receive my reports?"  & vbCrLf 
+	strBody = strBody & "A: All reports will be sent via email directly to you. Please make sure you provided us with a valid email address and check your spam folder if your order is completed. "  & vbCrLf & vbCrLf
+	strBody = strBody & "Q: Your website indicated the turnaround time is 5-10 days. I ordered the report 10 days ago, why have I still not received the report yet?" & vbCrLf 
+	strBody = strBody & "A: We try our best to provide you with the accurate turnaround times in each country. Unfortunately, the average turnaround time indicated on our website does not include national holidays and court closures. Please prepare enough time if you need to meet a specific deadline on your side. Also, all international criminal searches are hand searched by researchers at the local courthouses with the help of court staff. Due to this, there are possible delays that could slow down the turnaround time of your search. If a possible hit record is found, our local researcher will take additional procedures to verify the identity. Unforeseen delays are out of our control due to courts being short staffed and local holidays that cause court closures and other court delays."  & vbCrLf & vbCrLf
+
+	strBody = strBody & "CRS Checks LLC." & vbCrLf
+	strBody = strBody & "Customer Support Team" & vbCrLf
+	strBody = strBody & "116 Inverness Drive East Suite 206" & vbCrLf
+	strBody = strBody & "Englewood CO 80112" & vbCrLf
+	strBody = strBody & "support@criminal-records-search.com" & vbCrLf
+	strBody = strBody & "https://www.criminal-records-search.com" & vbCrLf
+
+	myMail.From = strSupportEmailAdrs
+	'myMail.From = strSupportEmailAdrs	
+	myMail.To = Session("Email_Address")
+
+
+	myMail.Subject = "Order ID : " & OrderID & " - Receipt from criminal-records-search.com - " & Session("SearchType")
+	'myMail.Subject = "Test"
+	myMail.TextBody = strBody 
+
+	'myMail.TextBodyPart.Charset = "GB2312"
+	myMail.TextBodyPart.Charset = "utf-8"
+
+'myMail.Subject = "Support request from criminal-records-search.com  " & SupportType
+		'myMail.TextBody = strBody 
+
+		
+		myMail.Configuration.Fields.Item _
+		("http://schemas.microsoft.com/cdo/configuration/sendusing") = 2
+		'Name or IP of remote SMTP server
+		myMail.Configuration.Fields.Item _
+		("http://schemas.microsoft.com/cdo/configuration/smtpserver") = "mail.criminal-records-search.com"
+		'Server port
+		myMail.Configuration.Fields.Item _
+		("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = 25 
+
+		myMail.Configuration.Fields.Item ("http://schemas.microsoft.com/cdo/configuration/smtpauthenticate") = 1 'basic (clear-text) authentication 
+		myMail.Configuration.Fields.Item ("http://schemas.microsoft.com/cdo/configuration/sendusername") ="kaeli@criminal-records-search.com" 
+		myMail.Configuration.Fields.Item ("http://schemas.microsoft.com/cdo/configuration/sendpassword") ="Cubic2011!"
+
+
+		myMail.Configuration.Fields.Update
+		myMail.Send
+		set myMail = nothing
+
+End Sub
+
+
+'*******************************************************
+
+Sub EmailStraightline
+	Dim objCDOConfig, objFields
+	Set myMail = CreateObject("CDO.Message")
+
+	strBody = ""	
+	strBody = strBody & "Order ID : " & OrderID & vbCrLf
+	strBody = strBody & "Search Type= " & Session("SearchType") & vbCrLf
+	strBody = strBody & "First Name= " & Session("FName") & vbCrLf
+	strBody = strBody & "Last Name= " & Session("LName") & vbCrLf
+	strBody = strBody & "Middle Name= " & Session("MName") & vbCrLf
+	strBody = strBody & "DOB= " & Session("DOB") & vbCrLf
+	strBody = strBody & "Country= " & Session("Juris") & vbCrLf 
+	strBody = strBody & "City= " & Session("CountyName") & vbCrLf & vbCrLf	
+	strBody = strBody & "CRS Checks LLC" & vbCrLf
+	strBody = strBody & "8547 E. Arapahoe Rd. Ste 388" & vbCrLf
+	strBody = strBody & "Greenwood Village, CO 80112" & vbCrLf	
+
+	myMail.From = "support@criminal-records-search.com "
+'	objCDOMail.To = "orders@search4crime.com"
+	myMail.To = "yoshie@infocubic.com"
+'	myMail.To = "support@criminal-records-search.com "
+	'objCDOMail.Bcc = "support@criminal-records-search.com "
+	
+	myMail.Subject = " New international search request from CRS Checks " 
+	myMail.TextBody = strBody 
+	'????------
+	'objCDOMail.Send
+	''--------------
+	Set myMail = Nothing
+End Sub
+
+sub sendErrorHRXML(sErr, ReferenceId)
+    Dim objCDOConfig, objFields
+	Set myMail = CreateObject("CDO.Message")
+	
+	''========= for test mail server ==============
+	'Set objCDOConfig = Server.CreateObject("CDO.Configuration")
+	'Set objFields = objCDOConfig.Fields	
+	'With objFields
+	'	.Item("http://schemas.microsoft.com/cdo/configuration/smtpserver") = "chokyo"
+	'	.Item("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = 25
+	'	.Item("http://schemas.microsoft.com/cdo/configuration/SendUsing") = 2
+	'	.Update
+	'End With	
+	'objCDOMail.Configuration = objCDOConfig
+	''========= for test mail server -end- ==============
+		
+	myMail.From = strSupportEmailAdrs
+	myMail.To = strJustinEmailAdrs & "," & sDeveloperEmail
+	myMail.Subject = "deverus Error"
+	
+	strBody = "======== Error OrderID ==========" & vbCrLf
+	strBody = strBody & "OrderID: " & ReferenceId & vbCrLf & vbCrLf
+	strBody = strBody & "======== Error Description ==========" & vbCrLf
+	strBody = strBody & sErr
+	myMail.TextBody = strBody
+	
+	myMail.Configuration.Fields.Item _
+	("http://schemas.microsoft.com/cdo/configuration/sendusing") = 2
+	'Name or IP of remote SMTP server
+	myMail.Configuration.Fields.Item _
+	("http://schemas.microsoft.com/cdo/configuration/smtpserver") = "207.46.163.138"
+	'Server port
+	myMail.Configuration.Fields.Item _
+	("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = 25 
+	myMail.Configuration.Fields.Update	
+	
+	myMail.Send
+	Set myMail = Nothing
+End sub
+
+
+'*******************************************************
+' check value for debugging
+sub check(val)
+	response.Write(val)
+	response.End()
+end sub
+'*******************************************************
+
+%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta name="keywords" content="<%=countryName%> Criminal Background Check,<%=countryName%> business civil records, <%=countryName%> Education Verification,<%=countryName%> employment Verification, <%=countryName%> degree check, <%=countryName%> business credit check, <%=countryName%> company search" />
+    <meta name="description" content="Online Criminal Records Search, Instant Criminal background check. Leading provider of instant criminal records and public records. Cover most states" />
+    <meta name="abstract" content="International criminal background check. Online public record searches. Leading provider of international criminal, education and employment records" />
+    <title>Online criminal records search - Instant criminal background check - State</title>
+    <link type="text/css" href="https://infocubic.com/doc/crs/order/css/master.css" rel="Stylesheet" />
+    <script type="text/JavaScript">
+    <!--
+    function MM_reloadPage(init) {  //reloads the window if Nav4 resized
+      if (init==true) with (navigator) {if ((appName=="Netscape")&&(parseInt(appVersion)==4)) {
+        document.MM_pgW=innerWidth; document.MM_pgH=innerHeight; onresize=MM_reloadPage; }}
+      else if (innerWidth!=document.MM_pgW || innerHeight!=document.MM_pgH) location.reload();
+    }
+    MM_reloadPage(true);
+    //-->
+    </script>
+    <script type="text/javascript">
+    function OpenCertDetails()
+	    {
+	    thewindow = window.open('https://www.thawte.com/cgi/server/certdetails.exe?code=USINTE761-2', 'anew', config='height=400,width=450,toolbar=no,menubar=no,scrollbars=yes,resizable=no,location=no,directories=no,status=yes');
+	    }
+    function Redir(targ,selObj,restore){
+      eval(targ+".location='"+selObj.options[selObj.selectedIndex].value+"'");
+      if (restore) selObj.selectedIndex=0;
+    }
+    function OpenWin(t){
+	    window.open(t,"WindowOpen","toolbar=yes,status=yes,scrollbars=yes,location=no,resizable=1,Width=650,Height=400,left=100,top=100")
+    }
+    </script>   
+    
+    <link type="text/css" href="https://infocubic.com/doc/crs/order/css/style2.css" rel="Stylesheet" />
+</head>
+<body  bgcolor="#FFFFFF">
+<!--Start wrap-->
+<div class="site-home">
+  <div class="wrap product-header">
+    <div class="title-area"><span class="site-title" itemprop="headline"><a href="/"><img src="https://infocubic.com/doc/crs/images/CRS-check-logo.svg" alt="Online criminal records search for 200 plus countries" border="0"></a></span>
+        </div>    
+      </div></div>
+
+<!--Start wrap-->
+<div id="wrap" class="wrap submit">
+<ul class="order"><li class="order-list">1. Select a product</li><li class="order-list">2. Order entry</li><li class="order-list">3. Confirmation</li><li class="order-list purplebg">4. Submit order</li></ul>
+
+    <!--Start content-->
+    <div id="content">
+        <h2></h2>
+        <!--Start Order_Form-->
+        <div id="Order_Form" class="mt20">
+<% If strSysMsg <> "" Then %>
+            <p class="mainHeading"><%= strSysMsg %></p>
+            <p><input type="button" value="Back" onclick="history.back();" /></p>
+<% Else %>
+            <p class="mainHeading"><strong>Thank you very much for using our service.</strong></p>
+            <p class="mainText">Your order ID is <strong><%= OrderID %></strong></p>
+            <%If Session("RForm") = 1 Then %>
+            <p class="mainText mt30"><a href="/pdf/International_AUTHORIZATION.pdf" target="_blank">Release Form</a>:<br />
+            Please email your signed release form with the order ID in the subject line to <a href="mailto:support@criminal-records-search.com">support@criminal-records-search.com</a>.</p>
+            <%End If %>
+            <p class="mainText">We have successfully received your order. A transaction receipt has been sent to your email address. You will receive reports via email.</p>
+            <p class="mainText">Some email services and SPAM fighting routines automatically place our emails such as these in your &quot;junk&quot;, &quot;bulk&quot; or &quot;spam&quot; folders. Please check those locations if you haven't received your receipt in the next few minutes.</p>
+            <p class="mainText">&nbsp;</p>
+            <p class="mainText"><span class="blue">You may also check the status any time by clicking</span> <a href="">here</a>.</p>
+            <p class="mainText mt20"><span class="statePageSubHeader">IMPORTANT: </span><br />
+            <span class="elvnPxBluBld">CRS Checks will appear on your credit card statement. </span></p>
+            
+<% End If %>
+        </div>
+        <!--End Order_Form-->
+    </div>
+    <!--End content-->
+   <!--Start footer-->
+    <footer class="site-footer">
+<div class="wrap">
+<div class="widgetfooter-wrap">
+            	<ul class="nav-menu" style="padding: 10px;">
+                	
+                    <li class="menu-item">© <script type="text/javascript">
+document.write(new Date().getFullYear())
+</script> CRS Checks LLC. All rights reserved.</li>
+                </ul>
+                
+            </div> 
+</div>            
+
+</footer>
+    <!--End footer-->
+</div>
+<!--End wrap-->
+</body>
+</html>
